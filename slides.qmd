@@ -1,0 +1,87 @@
+---
+title: "Lagrangian Coherent Structures"
+author: "Liam Blake"
+execute:
+  echo: false
+  cache: true
+format:
+    revealjs:
+        center: true
+        theme: [default]
+        html-math-method: mathjax
+        slide-number: c/t
+bibliography: lcs.bib
+---
+
+##
+
+
+
+
+##
+In unsteady flows, the Eulerian data $u$ is not enough to
+
+
+##
+Given **Eulerian** velocity data $u: \Omega \times [0,T] \to \mathbb{R}^n$, the **Lagrangian** trajectories $x(t)$ solve
+$$
+\frac{\mathrm{d}x}{\mathrm{d}t} = u\left(x, t\right).
+$$
+
+##
+
+
+## Three different LCS diagnostics:
+
+1. The finite-time Lyapunov exponent (FTLE) [@ShaddenEtAl_2005_DefinitionPropertiesLagrangian]
+
+. . .
+
+$$
+\mathrm{FTLE}\left(x,t\right) = \frac{1}{t}\ln{\left|\!\left|\nabla F_0^t(x)\right|\!\right|}
+$$
+
+. . .
+
+Measures **stretching**.
+
+## Three different LCS diagnostics:
+
+2. The Lagrangian-Averaged Vorticity Deviation (LAVD) [@HallerEtAl_2016_DefiningCoherentVortices]
+
+. . .
+
+$$
+\mathrm{LAVD}\left(x,t\right) = \int_0^t{\left|\omega\left(F_0^t(x), \xi\right) - \bar{\omega}\left(\xi\right)\right|\mathrm{d}\xi}
+$$
+where $\omega = \nabla \times u$.
+
+. . .
+
+Measures **rotation**.
+
+
+## Three different LCS diagnostics:
+
+3. Stochastic sensitivity ($S^2$) [@Balasuriya_2020_StochasticSensitivityComputable; @BlakeEtAl_2023_ExplicitGaussianCharacterisation]
+
+. . .
+
+$$
+S^2\left(x,t\right) = \left|\!\left|\int_0^t{L\left(x,t,\tau\right)L\left(x,t,\tau\right)^T\mathrm{d}\tau}\right|\!\right|
+$$
+where
+$$
+L\left(x,t,\tau\right) \coloneqq \nabla F_0^t(x)\left[\nabla F_0^\tau(x)\right]^{-1}
+$$
+
+. . .
+
+Measures **uncertainty**.
+
+##
+
+## References
+:::{.refs}
+:::
+
