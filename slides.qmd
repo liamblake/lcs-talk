@@ -1,6 +1,5 @@
 ---
 title: "Lagrangian Coherent Structures"
-author: "Liam Blake"
 execute:
   echo: false
   cache: true
@@ -11,75 +10,162 @@ format:
         html-math-method: mathjax
         slide-number: c/t
 bibliography: lcs.bib
+# csl: chicago-author-date.csl
 ---
 
-##
 
-
-
+## {background-video="perpetual_ocean.mp4" background-video-muted="true"}
 
 ##
-In unsteady flows, the Eulerian data $u$ is not enough to
 
+If video breaks:
+
+[https://www.youtube.com/watch?v=CCmTY0PKGDs]()
+
+## {.smaller}
+
+<p align="center">
+  ![](figures/haller_lcs.png)
+</p>
+Figure 1 of @Haller_2015_LagrangianCoherentStructures.
 
 ##
-Given **Eulerian** velocity data $u: \Omega \times [0,T] \to \mathbb{R}^n$, the **Lagrangian** trajectories $x(t)$ solve
+
+LCSs tell us about:
+
+:::{.incremental}
+- Where things end up
+
+- Pollutant spread
+
+- Temperature transport
+
+- How jellyfish swim
+:::
+
+##
+
+The velocity at a point $x \in \Omega_0$ and time $t \in [0,T]$ is given by the **Eulerian** velocity
 $$
-\frac{\mathrm{d}x}{\mathrm{d}t} = u\left(x, t\right).
+u(x,t)
+$$
+
+##
+OCEAN DATA VISUALISATION HERE. ANIMATION?
+
+
+
+
+##
+The **Lagrangian** trajectories $X(t)$ solve
+$$
+\frac{\mathrm{d}X}{\mathrm{d}t} = u\left(X, t\right), \quad X(0) = x
+$$
+
+##
+Define the **flow map** $F_0^t(x)$ as
+
+$$
+\frac{\partial F_0^t(x)}{\partial t} = u\left(F_0^t(x), t\right), \quad F_0^0(x) = x
 $$
 
 ##
 
+OCEAN TRAJECTORY EXAMPLES HERE
 
-## Three different LCS diagnostics:
+##
 
-1. The finite-time Lyapunov exponent (FTLE) [@ShaddenEtAl_2005_DefinitionPropertiesLagrangian]
+A **Lagrangian coherent structure (LCS)** is a spatial region that remains coherent under the flow [@BalasuriyaEtAl_2018_GeneralizedLagrangianCoherent].
+
+. . .
+
+LCSs are often computed from the flow map $F_0^t(x)$.
+
+##
+:::{.incremental}
+1. Finite-time Lyapunov exponent (FTLE)
+
+2. Lagrangian-averaged vorticity deviation (LAVD)
+
+3. Stochastic sensitivity ($S^2$)
+:::
+
+## 1. Finite-time Lyapunov exponent
+
+Established as an LCS tool by @ShaddenEtAl_2005_DefinitionPropertiesLagrangian,
 
 . . .
 
 $$
-\mathrm{FTLE}\left(x,t\right) = \frac{1}{t}\ln{\left|\!\left|\nabla F_0^t(x)\right|\!\right|}
+\mathrm{FTLE}\left(x,t\right) = \frac{1}{t}\ln{\left|\!\left|\nabla F_0^t(x)\right|\!\right|}.
 $$
 
 . . .
 
 Measures **stretching**.
 
-## Three different LCS diagnostics:
+## 1. Finite-time Lyapunov exponent
 
-2. The Lagrangian-Averaged Vorticity Deviation (LAVD) [@HallerEtAl_2016_DefiningCoherentVortices]
+OCEAN FTLE FIELD HERE
+
+## 1. Finite-time Lyapunov exponent
+
+OCEAN FTLE STRUCTURES HERE
+
+## 2. Lagrangian-averaged vorticity deviation
+
+Introduced by @HallerEtAl_2016_DefiningCoherentVortices.
 
 . . .
 
 $$
-\mathrm{LAVD}\left(x,t\right) = \int_0^t{\left|\omega\left(F_0^t(x), \xi\right) - \bar{\omega}\left(\xi\right)\right|\mathrm{d}\xi}
+\mathrm{LAVD}\left(x,t\right) = \int_0^t{\left|\omega\left(F_0^t(x), \xi\right) - \bar{\omega}\left(\xi\right)\right|\mathrm{d}\xi},
 $$
-where $\omega = \nabla \times u$.
+where $\omega = \nabla \times u$ and
+$$
+\bar{\omega}(\xi) = \frac{1}{\left|\Omega_0\right|}\int_{\Omega_0}{\omega\left(F_0^\xi(z), \xi\right)\mathrm{d}z}.
+$$
 
 . . .
 
 Measures **rotation**.
 
+## 2. Lagrangian-averaged vorticity deviation
 
-## Three different LCS diagnostics:
+OCEAN LAVD FIELD HERE
 
-3. Stochastic sensitivity ($S^2$) [@Balasuriya_2020_StochasticSensitivityComputable; @BlakeEtAl_2023_ExplicitGaussianCharacterisation]
+## 2. Lagrangian-averaged vorticity deviation
+
+OCEAN LAVD STRUCTURES HERE
+
+## 3. Stochastic sensitivity
+
+Introduced by @Balasuriya_2020_StochasticSensitivityComputable and extended by @BlakeEtAl_2023_ExplicitGaussianCharacterisation.
 
 . . .
 
 $$
-S^2\left(x,t\right) = \left|\!\left|\int_0^t{L\left(x,t,\tau\right)L\left(x,t,\tau\right)^T\mathrm{d}\tau}\right|\!\right|
+S^2\left(x,t\right) = \left|\!\left|\int_0^t{L\left(x,t,\tau\right)L\left(x,t,\tau\right)^T\mathrm{d}\tau}\right|\!\right|,
 $$
 where
 $$
-L\left(x,t,\tau\right) \coloneqq \nabla F_0^t(x)\left[\nabla F_0^\tau(x)\right]^{-1}
+L\left(x,t,\tau\right) \coloneqq \nabla F_0^t(x)\left[\nabla F_0^\tau(x)\right]^{-1}.
 $$
 
 . . .
 
-Measures **uncertainty**.
+Measures **spatial uncertainty**.
 
-##
+
+## 3. Stochastic sensitivity
+
+OCEAN $S^2$ FIELD HERE
+
+
+## 3. Stochastic sensitivity
+
+OCEAN $S^2$ STRUCTURES HERE
+
 
 ## References
 :::{.refs}
