@@ -13,8 +13,24 @@ bibliography: lcs.bib
 # csl: chicago-author-date.csl
 ---
 
+```{julia}
+using CairoMakie
+using LaTeXStrings
 
-## {background-video="perpetual_ocean.mp4" background-video-muted="true"}
+include("load_interpolate_netcdf.jl")
+
+DATA = "data/cmems_aus.nc"
+lat, lon, days, u, v, land = read_nc_vel(DATA);
+
+glon = repeat(lon, outer=(1, length(lat)))';
+glat = repeat(lat, outer=(1, length(lon)));
+
+# Generate speed animation and save
+include("eulerian_visualisation.jl")
+eulerian_animation(glon, glat, days[1:365], u, v, "figures/eulerian_speed.mp4"; colormap=:jet, nan_color=RGBAf(0, 0, 0, 1));
+```
+
+## {background-video="figures/perpetual_ocean.mp4" background-video-muted="true"}
 
 ##
 
@@ -22,12 +38,12 @@ If video breaks:
 
 [https://www.youtube.com/watch?v=CCmTY0PKGDs]()
 
-## {.smaller}
+<!-- ## {.smaller}
 
 <p align="center">
   ![](figures/haller_lcs.png)
-</p>
-Figure 1 of @Haller_2015_LagrangianCoherentStructures.
+</p> -->
+<!-- Figure 1 of @Haller_2015_LagrangianCoherentStructures. -->
 
 ##
 
@@ -51,9 +67,7 @@ u(x,t)
 $$
 
 ##
-OCEAN DATA VISUALISATION HERE. ANIMATION?
-
-
+{{< figures/eulerian_speed.mp4 >}}
 
 
 ##
@@ -75,7 +89,7 @@ OCEAN TRAJECTORY EXAMPLES HERE
 
 ##
 
-A **Lagrangian coherent structure (LCS)** is a spatial region that remains coherent under the flow [@BalasuriyaEtAl_2018_GeneralizedLagrangianCoherent].
+A **Lagrangian coherent structure (LCS)** is a spatial region that remains coherent under the flow.
 
 . . .
 
@@ -91,8 +105,6 @@ LCSs are often computed from the flow map $F_0^t(x)$.
 :::
 
 ## 1. Finite-time Lyapunov exponent
-
-Established as an LCS tool by @ShaddenEtAl_2005_DefinitionPropertiesLagrangian,
 
 . . .
 
@@ -113,8 +125,6 @@ OCEAN FTLE FIELD HERE
 OCEAN FTLE STRUCTURES HERE
 
 ## 2. Lagrangian-averaged vorticity deviation
-
-Introduced by @HallerEtAl_2016_DefiningCoherentVortices.
 
 . . .
 
@@ -140,8 +150,6 @@ OCEAN LAVD STRUCTURES HERE
 
 ## 3. Stochastic sensitivity
 
-Introduced by @Balasuriya_2020_StochasticSensitivityComputable and extended by @BlakeEtAl_2023_ExplicitGaussianCharacterisation.
-
 . . .
 
 $$
@@ -166,8 +174,7 @@ OCEAN $S^2$ FIELD HERE
 
 OCEAN $S^2$ STRUCTURES HERE
 
+##
 
-## References
-:::{.refs}
-:::
+ALL THREE HERE?
 
