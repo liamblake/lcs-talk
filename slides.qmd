@@ -1,5 +1,6 @@
 ---
 title: "Lagrangian Coherent Structures"
+subtitle: "(and the finite-time Lyapunov exponent)"
 execute:
   echo: false
   cache: true
@@ -9,25 +10,25 @@ format:
         theme: [default]
         html-math-method: mathjax
         slide-number: c/t
-bibliography: lcs.bib
-# csl: chicago-author-date.csl
 ---
 
 ```{julia}
 using CairoMakie
+using DifferentialEquations
 using LaTeXStrings
 
 include("load_interpolate_netcdf.jl")
 
 DATA = "data/cmems_aus.nc"
 lat, lon, days, u, v, land = read_nc_vel(DATA);
+ode_rhs = (x, _, t) -> [u(x[1], x[2], t), v(x[1], x[2], t)]
 
 glon = repeat(lon, outer=(1, length(lat)))';
 glat = repeat(lat, outer=(1, length(lon)));
 
 # Generate speed animation and save
 include("eulerian_visualisation.jl")
-eulerian_animation(glon, glat, days[1:365], u, v, "figures/eulerian_speed.mp4"; colormap=:jet, nan_color=RGBAf(0, 0, 0, 1));
+eulerian_animation(glon, glat, days[1:365], u, v, land, "figures/eulerian_speed.mp4"; colormap=:balance, nan_color=RGBAf(0, 0, 0, 1));
 ```
 
 ## {background-video="figures/perpetual_ocean.mp4" background-video-muted="true"}
@@ -38,6 +39,16 @@ If video breaks:
 
 [https://www.youtube.com/watch?v=CCmTY0PKGDs]()
 
+##
+
+A **Lagrangian coherent structure (LCS)** is a region in a fluid that remains "coherent" under the flow.
+
+. . .
+
+For an introduction/review, see
+
+> S. Balasuriya, N.T. Ouellette, I.I. Rypina, 2018. *Generalized Lagrangian coherent structures*. Physica D: Nonlinear Phenomena 372, 31–51.
+
 <!-- ## {.smaller}
 
 <p align="center">
@@ -45,19 +56,23 @@ If video breaks:
 </p> -->
 <!-- Figure 1 of @Haller_2015_LagrangianCoherentStructures. -->
 
-##
+## {.smaller}
+![](figures/gulf.png){fig-align="center"}
 
-LCSs tell us about:
+> Y. Liu, C. Wilson, M.A. Green, C.W. Hughes, 2018. *Gulf Stream Transport and Mixing Processes via Coherent Structure Dynamics*. Journal of Geophysical Research: Oceans 123, 3014–3037.
 
-:::{.incremental}
-- Where things end up
 
-- Pollutant spread
+## {.smaller}
+![](figures/vortex.png){fig-align="center"}
 
-- Temperature transport
+> C. Blachut and C. González-Tokman, 2020. *A tale of two vortices: How numerical ergodic theory and transfer operators reveal fundamental changes to coherent structures in non-autonomous dynamical systems*. Journal of Computational Dynamics 7, 369–399.
 
-- How jellyfish swim
-:::
+
+## {.smaller}
+![](figures/jellyfish.png){fig-align="center"}
+
+> J. Peng and J.O. Dabiri, 2009. *Transport of inertial particles by Lagrangian coherent structures: application to predator–prey interaction in jellyfish feeding*. Journal of Fluid Mechanics 623, 75–84.
+
 
 ##
 
@@ -66,8 +81,7 @@ $$
 u(x,t)
 $$
 
-##
-{{< figures/eulerian_speed.mp4 >}}
+## {background-video="figures/eulerian_speed.mp4" background-video-muted="true" background-size="contain"}
 
 
 ##
@@ -84,47 +98,111 @@ $$
 $$
 
 ##
+$$
+\frac{\partial F_0^t(x)}{\partial t} = u\left(F_0^t(x), t\right), \quad F_0^0(x) = x
+$$
 
-OCEAN TRAJECTORY EXAMPLES HERE
+![](figures/flow_point.svg){fig-align="center"}
+
 
 ##
+```{julia}
+x₀ = [160, -35]
+T = 100
 
-A **Lagrangian coherent structure (LCS)** is a spatial region that remains coherent under the flow.
+prob = ODEProblem(ode_rhs, x₀, (0, T))
+sol = solve(prob)
 
-. . .
+fig, ax, _ = lines(sol[1, :], sol[2, :], linecolor=:black)
+heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :grey]), fxaa=false)
+hidedecorations!(ax)
+fig
+```
+
+##
 
 LCSs are often computed from the flow map $F_0^t(x)$.
 
+. . .
+
+![](figures/flow_sets.svg){fig-align="center"}
+
 ##
+An example: the finite-time Lyapunov exponent (FTLE)
+
+The goal: characterise **stretching**.
+
+> S.C. Shadden, F. Lekien, J.E. Marsden, 2005. *Definition and properties of Lagrangian coherent structures from finite-time Lyapunov exponents in two-dimensional aperiodic flows*. Physica D: Nonlinear Phenomena 212, 271–304.
+
+##
+$$
+\sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F\left(x\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
+$$
+
+
+##
+$$
+\sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F\left(\delta\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|} \approx \frac{\left|\!\left|\nabla F_0^t\left(x\right)\delta\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
+$$
+
+##
+$$
+\mathrm{FTLE}\left(x,t\right) = \frac{1}{t}\ln\left[\max_{\delta \neq 0}\frac{\left|\!\left|\nabla F_0^t(x)\delta\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}\right].
+$$
+
+
+
+##
+
+```{julia}
+include("ftle.jl")
+
+# Create a grid of initial conditions
+# lon_grid = minimum(lon):0.1:maximum(lon)
+# lat_grid = minimum(lat):0.1:maximum(lat)
+# This is a disgusting line of code
+xs = mapreduce(permutedims, vcat, [collect(pairs) for pairs in Base.product(lon, lat)][:])
+
+ftle_field = ftle(ode_rhs, xs, 0, 50, 0.01)
+ftle_field = reshape(ftle_field, length(lon), length(lat))
+fig, ax, hm = heatmap(lon, lat, ftle_field, colormap=Reverse(:balance))
+# Overlay land as a heatmap
+heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :grey]), fxaa=false)
+Colorbar(fig[1, 2], hm)
+hidedecorations!(ax)
+
+fig
+```
+
+
+##
+How to extract LCSs from the FTLE field?
+
 :::{.incremental}
-1. Finite-time Lyapunov exponent (FTLE)
+- Maximising ridges can correspond to flow barriers
 
-2. Lagrangian-averaged vorticity deviation (LAVD)
-
-3. Stochastic sensitivity ($S^2$)
+- Minimising troughs can correspond to
 :::
 
-## 1. Finite-time Lyapunov exponent
 
-. . .
+##
 
-$$
-\mathrm{FTLE}\left(x,t\right) = \frac{1}{t}\ln{\left|\!\left|\nabla F_0^t(x)\right|\!\right|}.
-$$
+```{julia}
+max_ftle = maximum(ftle_field[.!land])
+min_ftle = minimum(ftle_field[.!land])
 
-. . .
+max_ridge = ftle_field .> 0.8 * max_ftle
+min_trough = ftle_field .< 0.2 * min_ftle
 
-Measures **stretching**.
+fig, ax, _ = heatmap(lon, lat, max_ridge, colormap=cgrad([:transparent, :blue]), fxaa=false)
+heatmap!(ax, lon, lat, min_trough, colormap=cgrad([:transparent, :red]), fxaa=false)
+heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :grey]), fxaa=false)
+hidedecorations!(ax)
 
-## 1. Finite-time Lyapunov exponent
+fig
+```
 
-OCEAN FTLE FIELD HERE
-
-## 1. Finite-time Lyapunov exponent
-
-OCEAN FTLE STRUCTURES HERE
-
-## 2. Lagrangian-averaged vorticity deviation
+<!-- ## 2. Lagrangian-averaged vorticity deviation
 
 . . .
 
@@ -176,5 +254,41 @@ OCEAN $S^2$ STRUCTURES HERE
 
 ##
 
-ALL THREE HERE?
+ALL THREE HERE? -->
 
+<!-- ## Further details {.smaller}
+
+#### LCSs
+S. Balasuriya, N.T. Ouellette, I.I. Rypina, 2018. *Generalized Lagrangian coherent structures*. Physica D: Nonlinear Phenomena 372, 31–51.
+
+#### FTLE
+S.C. Shadden, F. Lekien, J.E. Marsden, 2005. *Definition and properties of Lagrangian coherent structures from finite-time Lyapunov exponents in two-dimensional aperiodic flows*. Physica D: Nonlinear Phenomena 212, 271–304.
+
+#### LAVD
+G. Haller, A. Hadjighasem, M. Farazmand, F. Huhn, 2016. *Defining coherent vortices objectively from the vorticity*. Journal of Fluid Mechanics 795, 136–173.
+
+#### $S^2$
+S. Balasuriya, 2020. *Stochastic Sensitivity: A Computable Lagrangian Uncertainty Measure for Unsteady Flows*. SIAM Review 62, 781–816.
+
+L. Blake, J. Maclean, S. Balasuriya, 2023. *Explicit Gaussian characterisation of model uncertainty in the limit of small noise*. Submitted to SIAM/ASA Journal on Uncertainty Quantification. -->
+
+<!--
+Balasuriya, S., 2020. Stochastic Sensitivity: A Computable Lagrangian Uncertainty Measure for Unsteady Flows. SIAM Review 62, 781–816. https://doi.org/10.1137/18M1222922
+
+Balasuriya, S., Ouellette, N.T., Rypina, I.I., 2018. Generalized Lagrangian coherent structures. Physica D: Nonlinear Phenomena 372, 31–51. https://doi.org/10.1016/j.physd.2018.01.011
+
+Blachut, C., González-Tokman, C., 2020. A tale of two vortices: How numerical ergodic theory and transfer operators reveal fundamental changes to coherent structures in non-autonomous dynamical systems. JCD 7, 369–399. https://doi.org/10.3934/jcd.2020015
+
+Blake, L., Maclean, J., Balasuriya, S., 2023. Explicit Gaussian characterisation of model uncertainty in the limit of small noise. submitted to SIAM/ASA Journal on Uncertainty Quantification.
+
+Haller, G., 2015. Lagrangian Coherent Structures. Annu. Rev. Fluid Mech. 47, 137–162. https://doi.org/10.1146/annurev-fluid-010313-141322
+
+Haller, G., Hadjighasem, A., Farazmand, M., Huhn, F., 2016. Defining coherent vortices objectively from the vorticity. Journal of Fluid Mechanics 795, 136–173. https://doi.org/10.1017/jfm.2016.151
+
+Lebreton, L., Slat, B., Ferrari, F., Sainte-Rose, B., Aitken, J., Marthouse, R., Hajbane, S., Cunsolo, S., Schwarz, A., Levivier, A., Noble, K., Debeljak, P., Maral, H., Schoeneich-Argent, R., Brambini, R., Reisser, J., 2018. Evidence that the Great Pacific Garbage Patch is rapidly accumulating plastic. Sci Rep 8, 4666. https://doi.org/10.1038/s41598-018-22939-w
+
+Peng, J., Dabiri, J.O., 2009. Transport of inertial particles by Lagrangian coherent structures: application to predator–prey interaction in jellyfish feeding. Journal of Fluid Mechanics 623, 75–84. https://doi.org/10.1017/S0022112008005089
+
+Shadden, S.C., Lekien, F., Marsden, J.E., 2005. Definition and properties of Lagrangian coherent structures from finite-time Lyapunov exponents in two-dimensional aperiodic flows. Physica D: Nonlinear Phenomena 212, 271–304. https://doi.org/10.1016/j.physd.2005.10.007
+
+ -->

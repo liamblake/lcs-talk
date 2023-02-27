@@ -4,7 +4,7 @@ using NCDatasets
 include("earth.jl")
 
 
-function read_nc_vel(file; kwargs...)
+function read_nc_vel(file)
     # println("Processing $(file)...")
 
     nc = Dataset(file)
@@ -24,20 +24,19 @@ function read_nc_vel(file; kwargs...)
     u = u .* repeat(arc_to_meridonal(WGS84, lat)'; outer=(vsize[1], 1, vsize[3])) * 86400
 
     # Replace missing data (land) with zero
-    # land_u = prod(ismissing.(u), dims=3)
-    # land_v = prod(ismissing.(u), dims=3)
-    # land = land_u .* land_v
-    # u[land] = 0.0
-    # v[land] = 0.0
-    land = nothing
+    land_u = ismissing.(u)
+    land_v = ismissing.(u)
+    land = prod(land_u .|| land_v, dims=3)[:, :, 1]
+    u[land_u] .= 0.0
+    v[land_v] .= 0.0
 
     # Rescale time to start from 0
     mil_to_days = s -> s.value / (1000 * 60 * 60 * 24)
     days = mil_to_days.(time .- time[1])
 
     # Construct interpolations
-    u_interp = linear_interpolation((lon, lat, days), u; kwargs...)
-    v_interp = linear_interpolation((lon, lat, days), v; kwargs...)
+    u_interp = linear_interpolation((lon, lat, days), u, extrapolation_bc=0.0)
+    v_interp = linear_interpolation((lon, lat, days), v, extrapolation_bc=0.0)
 
     return lat, lon, days, u_interp, v_interp, land
 end
