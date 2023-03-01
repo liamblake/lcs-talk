@@ -27,8 +27,8 @@ glon = repeat(lon, outer=(1, length(lat)))';
 glat = repeat(lat, outer=(1, length(lon)));
 
 # Generate speed animation and save
-include("eulerian_visualisation.jl")
-eulerian_animation(glon, glat, days[1:365], u, v, land, "figures/eulerian_speed.mp4"; colormap=:balance, nan_color=RGBAf(0, 0, 0, 1));
+include("visualisation.jl")
+eulerian_animation(glon, glat, days, u, v, land, "figures/eulerian_speed.mp4"; colormap=:dense, nan_color=RGBAf(0, 0, 0, 1));
 ```
 
 ## {background-video="figures/perpetual_ocean.mp4" background-video-muted="true"}
@@ -45,9 +45,7 @@ A **Lagrangian coherent structure (LCS)** is a region in a fluid that remains "c
 
 . . .
 
-For an introduction/review, see
-
-> S. Balasuriya, N.T. Ouellette, I.I. Rypina, 2018. *Generalized Lagrangian coherent structures*. Physica D: Nonlinear Phenomena 372, 31–51.
+LCSs are a generalisation of easily identifiable structures such as jets and vortices.
 
 <!-- ## {.smaller}
 
@@ -91,6 +89,20 @@ $$
 $$
 
 ##
+```{julia}
+x₀ = [160, -35]
+T = 100
+
+prob = ODEProblem(ode_rhs, x₀, (0, T))
+sol = solve(prob)
+
+fig, ax, _ = lines(sol[1, :], sol[2, :], linecolor=:black)
+heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :black]), fxaa=false)
+hidedecorations!(ax)
+fig
+```
+
+##
 Define the **flow map** $F_0^t(x)$ as
 
 $$
@@ -105,23 +117,10 @@ $$
 ![](figures/flow_point.svg){fig-align="center"}
 
 
-##
-```{julia}
-x₀ = [160, -35]
-T = 100
-
-prob = ODEProblem(ode_rhs, x₀, (0, T))
-sol = solve(prob)
-
-fig, ax, _ = lines(sol[1, :], sol[2, :], linecolor=:black)
-heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :grey]), fxaa=false)
-hidedecorations!(ax)
-fig
-```
 
 ##
 
-LCSs are often computed from the flow map $F_0^t(x)$.
+LCSs are often computed only from the flow map $F_0^t(x)$.
 
 . . .
 
@@ -132,18 +131,19 @@ An example: the finite-time Lyapunov exponent (FTLE)
 
 The goal: characterise **stretching**.
 
-> S.C. Shadden, F. Lekien, J.E. Marsden, 2005. *Definition and properties of Lagrangian coherent structures from finite-time Lyapunov exponents in two-dimensional aperiodic flows*. Physica D: Nonlinear Phenomena 212, 271–304.
-
 ##
 $$
 \sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F\left(x\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
 $$
 
+![](figures/ftle1.svg){fig-align="center"}
 
 ##
 $$
 \sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F\left(\delta\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|} \approx \frac{\left|\!\left|\nabla F_0^t\left(x\right)\delta\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
 $$
+
+![](figures/ftle1.svg){fig-align="center"}
 
 ##
 $$
@@ -158,16 +158,16 @@ $$
 include("ftle.jl")
 
 # Create a grid of initial conditions
-# lon_grid = minimum(lon):0.1:maximum(lon)
-# lat_grid = minimum(lat):0.1:maximum(lat)
 # This is a disgusting line of code
 xs = mapreduce(permutedims, vcat, [collect(pairs) for pairs in Base.product(lon, lat)][:])
+# Use the grid resolution as the step size
+δx = max(abs(lon[2] - lon[1]), abs(lat[2] - lat[1]))
 
-ftle_field = ftle(ode_rhs, xs, 0, 50, 0.01)
+ftle_field = ftle(ode_rhs, xs, 0, 50, δx)
 ftle_field = reshape(ftle_field, length(lon), length(lat))
 fig, ax, hm = heatmap(lon, lat, ftle_field, colormap=Reverse(:balance))
 # Overlay land as a heatmap
-heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :grey]), fxaa=false)
+heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :black]), fxaa=false)
 Colorbar(fig[1, 2], hm)
 hidedecorations!(ax)
 
@@ -179,10 +179,14 @@ fig
 How to extract LCSs from the FTLE field?
 
 :::{.incremental}
-- Maximising ridges can correspond to flow barriers
+- Maximising ridges can correspond to attracting/repelling regions.
 
-- Minimising troughs can correspond to
+- Such regions form barriers and jets in the flow.
 :::
+
+. . .
+
+> S.C. Shadden, F. Lekien, J.E. Marsden, 2005. *Definition and properties of Lagrangian coherent structures from finite-time Lyapunov exponents in two-dimensional aperiodic flows*. Physica D: Nonlinear Phenomena 212, 271–304.
 
 
 ##
@@ -201,6 +205,18 @@ hidedecorations!(ax)
 
 fig
 ```
+
+
+##
+![](figures/sb_dg_ftle.png){fig-align="center"}
+
+> S. Balasuriya, N.T. Ouellette, I.I. Rypina, 2018. *Generalized Lagrangian coherent structures*. Physica D: Nonlinear Phenomena 372, 31–51.
+
+
+##
+![](figures/sb_dg_ridge.png){fig-align="center"}
+
+> S. Balasuriya, N.T. Ouellette, I.I. Rypina, 2018. *Generalized Lagrangian coherent structures*. Physica D: Nonlinear Phenomena 372, 31–51.
 
 <!-- ## 2. Lagrangian-averaged vorticity deviation
 
