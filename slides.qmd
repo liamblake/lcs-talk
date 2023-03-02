@@ -28,7 +28,16 @@ glat = repeat(lat, outer=(1, length(lon)));
 
 # Generate speed animation and save
 include("visualisation.jl")
-eulerian_animation(glon, glat, days, u, v, land, "figures/eulerian_speed.mp4"; colormap=:dense, nan_color=RGBAf(0, 0, 0, 1));
+eulerian_animation(glon, glat, days[1:365], u, v, land, "figures/eulerian_speed.mp4"; colormap=:dense, nan_color=RGBAf(0, 0, 0, 1));
+
+# Lagrangian animation
+x₀ = [155, -35]
+T = 365
+
+prob = ODEProblem(ode_rhs, x₀, (0, T))
+sol = solve(prob, saveat=0:T)
+lagrangian_animation(lon, lat, 0:T, sol, land, "figures/lagrangian.mp4");
+
 ```
 
 ## {background-video="figures/perpetual_ocean.mp4" background-video-muted="true"}
@@ -88,19 +97,16 @@ $$
 \frac{\mathrm{d}X}{\mathrm{d}t} = u\left(X, t\right), \quad X(0) = x
 $$
 
-##
+## {background-video="figures/lagrangian.mp4" background-video-muted="true" background-size="contain"}
+
 ```{julia}
-x₀ = [160, -35]
-T = 100
-
-prob = ODEProblem(ode_rhs, x₀, (0, T))
-sol = solve(prob)
-
-fig, ax, _ = lines(sol[1, :], sol[2, :], linecolor=:black)
-heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :black]), fxaa=false)
-hidedecorations!(ax)
-fig
+# fig, ax, _ = lines(sol[1, :], sol[2, :], linecolor=:black)
+# heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :black]), fxaa=false)
+# hidedecorations!(ax)
+# fig
 ```
+
+
 
 ##
 Define the **flow map** $F_0^t(x)$ as
@@ -133,14 +139,14 @@ The goal: characterise **stretching**.
 
 ##
 $$
-\sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F\left(x\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
+\sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F_0^t\left(x\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
 $$
 
 ![](figures/ftle1.svg){fig-align="center"}
 
 ##
 $$
-\sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F\left(\delta\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|} \approx \frac{\left|\!\left|\nabla F_0^t\left(x\right)\delta\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
+\sigma\left(x\right) = \frac{\left|\!\left|F_0^t\left(x + \delta\right) - F_0^t\left(\delta\right)\right|\!\right|}{\left|\!\left|\delta\right|\!\right|} \approx \frac{\left|\!\left|\nabla F_0^t\left(x\right)\delta\right|\!\right|}{\left|\!\left|\delta\right|\!\right|}
 $$
 
 ![](figures/ftle1.svg){fig-align="center"}
@@ -163,7 +169,7 @@ xs = mapreduce(permutedims, vcat, [collect(pairs) for pairs in Base.product(lon,
 # Use the grid resolution as the step size
 δx = max(abs(lon[2] - lon[1]), abs(lat[2] - lat[1]))
 
-ftle_field = ftle(ode_rhs, xs, 0, 50, δx)
+ftle_field = ftle(ode_rhs, xs, 0, 100, δx)
 ftle_field = reshape(ftle_field, length(lon), length(lat))
 fig, ax, hm = heatmap(lon, lat, ftle_field, colormap=Reverse(:balance))
 # Overlay land as a heatmap

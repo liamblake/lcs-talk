@@ -20,6 +20,14 @@ function eulerian_animation(glon, glat, time, u, v, land, outdir; kwargs...)
     end
 end
 
-function lagrangian_animation()
+function lagrangian_animation(lon, lat, time, sol, land, outdir; kwargs...)
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    # Overlay land
+    heatmap!(ax, lon, lat, land, colormap=cgrad([:transparent, :black]), fxaa=false)
+    hidedecorations!(ax)
 
+    record(fig, outdir, 1:length(time); framerate=15) do i
+        lines!(ax, sol[1, 1:i], sol[2, 1:i], color=:black)
+    end
 end
